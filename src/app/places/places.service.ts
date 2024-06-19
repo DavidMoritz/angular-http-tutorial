@@ -32,7 +32,6 @@ export class PlacesService {
 
     if (!prevPlaces.some((p) => p.id === place.id)) {
       this.userPlaces.set([...prevPlaces, place]);
-    } else {
     }
 
     return this.httpClient
@@ -40,7 +39,7 @@ export class PlacesService {
         placeId: place.id
       })
       .pipe(
-        catchError((error) => {
+        catchError((_error) => {
           const message = 'Failed to stoare selected place';
           this.userPlaces.set(prevPlaces);
           this.errorService.showError(message);
@@ -49,7 +48,22 @@ export class PlacesService {
       );
   }
 
-  removeUserPlace(place: Place) {}
+  removeUserPlace(place: Place) {
+    const prevPlaces = this.userPlaces();
+
+    if (prevPlaces.some((p) => p.id === place.id)) {
+      this.userPlaces.set(prevPlaces.filter((p) => p.id !== place.id));
+    }
+
+    return this.httpClient.delete(`http://localhost:3000/user-places/${place.id}`).pipe(
+      catchError((_error) => {
+        const message = 'Failed to remove the selected place';
+        this.userPlaces.set(prevPlaces);
+        this.errorService.showError(message);
+        return throwError(() => new Error(message));
+      })
+    );
+  }
 
   private fetchPlaces(url: string) {
     return this.httpClient.get<{ places: Place[] }>(url).pipe(map((resData) => resData.places));
