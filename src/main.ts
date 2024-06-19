@@ -5,15 +5,25 @@ import {
   HttpHandlerFn,
   type HttpRequest,
   provideHttpClient,
-  withInterceptors
+  withInterceptors,
+  HttpEventType
 } from '@angular/common/http';
+import { tap } from 'rxjs';
 
 function loggingIntercepter(request: HttpRequest<unknown>, next: HttpHandlerFn) {
   console.log('outgoing request', request);
   const req = request.clone({
     headers: request.headers.set('X-DEBUG', 'TESTING')
   });
-  return next(request);
+  return next(request).pipe(
+    tap({
+      next: (event) => {
+        if (event.type === HttpEventType.Response) {
+          console.log('Incoming response', event.status, event.body);
+        }
+      }
+    })
+  );
 }
 
 bootstrapApplication(AppComponent, {
